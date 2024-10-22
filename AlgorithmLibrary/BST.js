@@ -444,7 +444,7 @@ BST.prototype.treeDelete = function (tree, valueToDelete) {
         } else if (tree.parent != null) {
           tree.parent.right = null
         } else {
-          treeRoot = null
+          this.treeRoot = null
         }
         this.resizeTree()
         this.cmd("Step")
