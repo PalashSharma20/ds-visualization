@@ -80,6 +80,14 @@ RedBlack.prototype.addControls = function () {
   this.showNullLeaves = addCheckboxToAlgorithmBar("Show Null Leaves")
   this.showNullLeaves.onclick = this.showNullLeavesCallback.bind(this)
   this.showNullLeaves.checked = false
+
+  this.constructField = addControlToAlgorithmBar("Text", "1,2,3,4,5,6,7,8,9,10")
+
+  this.constructButton = addControlToAlgorithmBar(
+    "Button",
+    "Construct from Sorted Input (Beta)"
+  )
+  this.constructButton.onclick = this.constructTreeFromUI.bind(this)
 }
 
 RedBlack.prototype.reset = function () {
@@ -121,6 +129,109 @@ var PRINT_VERTICAL_GAP = 20
 var PRINT_HORIZONTAL_GAP = 50
 var EXPLANITORY_TEXT_X = 10
 var EXPLANITORY_TEXT_Y = 10
+
+RedBlack.prototype.constructTreeFromUI = function () {
+  const val = this.constructField.value
+  if (val == "") {
+    return
+  }
+  const sorted = val
+    .replace(/\s/g, "")
+    .split(",")
+    .map((n) => this.normalizeNumber(n, 4))
+
+  this.commands = []
+  this.deleteTree(this.treeRoot)
+  this.reset()
+
+  this.cmd("SetText", 0, "Constructing tree from sorted input")
+  this.treeRoot = this.buildTree(
+    sorted,
+    0,
+    sorted.length - 1,
+    null,
+    0,
+    Math.floor(Math.log2(sorted.length + 1))
+  )
+
+  this.resizeTree()
+  this.animationManager.StartNewAnimation(this.commands)
+}
+
+RedBlack.prototype.deleteTree = function (tree) {
+  if (tree != null) {
+    this.deleteTree(tree.left)
+    this.deleteTree(tree.right)
+    this.cmd("Delete", tree.graphicID)
+  }
+}
+
+RedBlack.prototype.buildTree = function (
+  sorted,
+  start,
+  end,
+  parent,
+  level,
+  redLevel
+) {
+  if (start > end) {
+    // Create a phantom leaf node
+    const treeNodeID = this.nextIndex++
+    const leafNode = new RedBlackNode("", treeNodeID, 0, 0) // Initial positions will be updated later
+    leafNode.phantomLeaf = true
+    leafNode.blackLevel = 1 // Phantom leaves are black
+    this.cmd("CreateCircle", treeNodeID, "NULL\nLEAF", 0, 0)
+    this.cmd("SetForegroundColor", treeNodeID, FOREGROUND_BLACK)
+    this.cmd("SetBackgroundColor", treeNodeID, BACKGROUND_BLACK)
+    this.cmd("SetLayer", treeNodeID, 1) // Hide when not showing null leaves
+    leafNode.parent = parent
+    return leafNode
+  }
+
+  // Middle element to maintain balance
+  const mid = Math.floor((start + end) / 2)
+  const treeNodeID = this.nextIndex++
+  const newNode = new RedBlackNode(sorted[mid], treeNodeID, 0, 0) // Positions will be set later
+
+  // Determine color based on the current level and redLevel
+  if (level === redLevel) {
+    newNode.blackLevel = 0 // Red node
+    this.cmd("CreateCircle", treeNodeID, sorted[mid], 0, 0)
+    this.cmd("SetForegroundColor", treeNodeID, FOREGROUND_RED)
+    this.cmd("SetBackgroundColor", treeNodeID, BACKGROUND_RED)
+  } else {
+    newNode.blackLevel = 1 // Black node
+    this.cmd("CreateCircle", treeNodeID, sorted[mid], 0, 0)
+    this.cmd("SetForegroundColor", treeNodeID, FOREGROUND_BLACK)
+    this.cmd("SetBackgroundColor", treeNodeID, BACKGROUND_BLACK)
+  }
+
+  newNode.parent = parent
+
+  // Recursively build the left and right subtrees, increasing the level
+  newNode.left = this.buildTree(
+    sorted,
+    start,
+    mid - 1,
+    newNode,
+    level + 1,
+    redLevel
+  )
+  newNode.right = this.buildTree(
+    sorted,
+    mid + 1,
+    end,
+    newNode,
+    level + 1,
+    redLevel
+  )
+
+  // Connect the new node to its children (including phantom leaves)
+  this.cmd("Connect", treeNodeID, newNode.left.graphicID, LINK_COLOR)
+  this.cmd("Connect", treeNodeID, newNode.right.graphicID, LINK_COLOR)
+
+  return newNode
+}
 
 RedBlack.prototype.insertCallback = function (event) {
   var insertedValue = this.insertField.value
