@@ -93,11 +93,143 @@ BST.prototype.addControls = function () {
   this.findButton.onclick = this.findCallback.bind(this)
   this.printButton = addControlToAlgorithmBar("Button", "Print")
   this.printButton.onclick = this.printCallback.bind(this)
+
+  this.constructField = addControlToAlgorithmBar("Text", "1,2,3,4,5,6,7,8,9,10")
+  this.constructField.onkeydown = this.returnSubmit(
+    this.constructField,
+    this.constructTreeFromUI.bind(this),
+    20
+  )
+  this.constructButton = addControlToAlgorithmBar(
+    "Button",
+    "Construct from Sorted Input"
+  )
+  this.constructButton.onclick = this.constructTreeFromUI.bind(this)
 }
 
 BST.prototype.reset = function () {
   this.nextIndex = 1
   this.treeRoot = null
+}
+
+BST.prototype.constructTreeFromUI = function () {
+  const val = this.constructField.value.trim()
+  if (!val) return
+
+  const sorted = val
+    .split(",")
+    .map((n) => this.normalizeNumber(n, 4))
+    .filter((n) => !isNaN(n)) // Ensure valid numbers
+
+  this.implementAction(this.buildTree.bind(this), sorted)
+}
+
+BST.prototype.buildTree = function (sorted) {
+  this.commands = []
+  this.deleteTree(this.treeRoot)
+  this.reset()
+
+  const mid = Math.floor((sorted.length - 1) / 2)
+
+  const treeNodeID = this.nextIndex++
+  this.treeRoot = new BSTNode(
+    sorted[mid],
+    treeNodeID,
+    this.startingX,
+    BST.STARTING_Y
+  )
+
+  this.createNode(
+    treeNodeID,
+    this.treeRoot.data,
+    this.startingX,
+    BST.STARTING_Y
+  )
+  this.cmd("SetHighlight", treeNodeID, 1)
+  this.cmd("SetText", 0, "Level: 0, Node: Root")
+  this.cmd("Step")
+  this.cmd("SetHighlight", treeNodeID, 0)
+
+  this.buildTreeHelper(sorted, 0, sorted.length - 1, this.treeRoot, 0)
+
+  this.cmd("SetText", 0, " ")
+  return this.commands
+}
+
+BST.prototype.buildTreeHelper = function (sorted, start, end, node, level) {
+  const mid = start + Math.floor((end - start) / 2)
+
+  if (start <= mid - 1) {
+    const leftChild = this.createChildNode(
+      sorted,
+      start,
+      mid - 1,
+      node,
+      level + 1,
+      true
+    )
+    this.buildTreeHelper(sorted, start, mid - 1, leftChild, level + 1)
+  }
+
+  if (mid + 1 <= end) {
+    const rightChild = this.createChildNode(
+      sorted,
+      mid + 1,
+      end,
+      node,
+      level + 1,
+      false
+    )
+    this.buildTreeHelper(sorted, mid + 1, end, rightChild, level + 1)
+  }
+}
+
+BST.prototype.createChildNode = function (
+  sorted,
+  start,
+  end,
+  parentNode,
+  level,
+  isLeft
+) {
+  const mid = start + Math.floor((end - start) / 2)
+
+  const treeNodeID = this.nextIndex++
+  const childNode = new BSTNode(sorted[mid], treeNodeID, 100, 100)
+  childNode.parent = parentNode
+  if (isLeft) {
+    parentNode.left = childNode
+  } else {
+    parentNode.right = childNode
+  }
+
+  this.createNode(treeNodeID, childNode.data, 30, BST.STARTING_Y)
+  this.cmd("SetHighlight", childNode.graphicID, 1)
+  this.cmd(
+    "SetText",
+    0,
+    `Level: ${level}, Node: ${isLeft ? "Left" : "Right"} Child`
+  )
+  this.cmd("Step")
+  this.cmd("SetHighlight", childNode.graphicID, 0)
+  this.cmd("Connect", parentNode.graphicID, childNode.graphicID, BST.LINK_COLOR)
+  this.resizeTree()
+
+  return childNode
+}
+
+BST.prototype.createNode = function (id, value, startingX, startingY) {
+  this.cmd("CreateCircle", id, value, startingX, startingY)
+  this.cmd("SetForegroundColor", id, BST.FOREGROUND_COLOR)
+  this.cmd("SetBackgroundColor", id, BST.BACKGROUND_COLOR)
+}
+
+BST.prototype.deleteTree = function (tree) {
+  if (tree) {
+    this.deleteTree(tree.left)
+    this.deleteTree(tree.right)
+    this.cmd("Delete", tree.graphicID)
+  }
 }
 
 BST.prototype.insertCallback = function (event) {
