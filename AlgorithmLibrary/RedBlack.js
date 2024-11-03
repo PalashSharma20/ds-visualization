@@ -82,11 +82,6 @@ RedBlack.prototype.addControls = function () {
   this.showNullLeaves.checked = false
 
   this.constructField = addControlToAlgorithmBar("Text", "1,2,3,4,5,6,7,8,9,10")
-  this.constructField.onkeydown = this.returnSubmit(
-    this.constructField,
-    this.constructTreeFromUI.bind(this),
-    20
-  )
   this.constructButton = addControlToAlgorithmBar(
     "Button",
     "Construct from Sorted Input"
