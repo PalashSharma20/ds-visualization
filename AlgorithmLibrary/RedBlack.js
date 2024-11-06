@@ -121,7 +121,7 @@ var PRINT_COLOR = FOREGROUND_COLOR
 
 var widthDelta = 50
 var heightDelta = 50
-var startingY = 50
+var startingY = 150
 
 var FIRST_PRINT_POS_X = 40
 var PRINT_VERTICAL_GAP = 20
@@ -132,11 +132,10 @@ var EXPLANITORY_TEXT_Y = 10
 var ARRAY_BACKGROUND = "#FFFFFF"
 var ARRAY_HIGHLIGHT = "#90EE90"
 
-var ARRAY_X = 100
-var ARRAY_Y = 450
+var ARRAY_Y = 80
 var CELL_WIDTH = 30
 var CELL_HEIGHT = 30
-var ARROW_LENGTH = 50
+var ARROW_LENGTH = 30
 const cells = []
 
 RedBlack.prototype.constructTreeFromUI = function () {
@@ -154,11 +153,12 @@ RedBlack.prototype.constructTreeFromUI = function () {
 }
 
 RedBlack.prototype.drawArray = function(sorted) {
+  this.arrayX = this.startingX - (sorted.length - 1) / 2 * CELL_WIDTH
   for (let i = 0; i < sorted.length; i++){
     let index = this.nextIndex++
     cells.push(index)
     this.cmd("CreateRectangle", index, sorted[i],
-              CELL_WIDTH, CELL_HEIGHT, ARRAY_X + i * CELL_WIDTH, ARRAY_Y)
+              CELL_WIDTH, CELL_HEIGHT, this.arrayX + i * CELL_WIDTH, ARRAY_Y)
   }
 }
 
@@ -216,7 +216,7 @@ RedBlack.prototype.setArrow = function(
   id, // left = 0, right = 1
   index // array index
 ) {
-  let x = ARRAY_X + index * CELL_WIDTH
+  let x = this.arrayX + index * CELL_WIDTH
   let bottom_y = ARRAY_Y - CELL_HEIGHT / 2
   this.cmd("MoveArrow", id, x, bottom_y - ARROW_LENGTH, x, bottom_y)
 }
