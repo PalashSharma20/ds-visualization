@@ -55,6 +55,8 @@ function ObjectManager()
 	this.height = 0;
 	this.statusReport = new AnimatedLabel(-1, "XXX", false, 30);
 	this.statusReport.x = 30;
+
+  this.arrows = [null, null];
 	
 	this.draw = function()
 	{
@@ -64,6 +66,12 @@ function ObjectManager()
 		
 		this.ctx.clearRect(0,0,this.width,this.height); // clear canvas
 		this.statusReport.y = this.height - 15;
+
+    for (let arrow of this.arrows){
+      if (arrow != null){
+        arrow.draw(this.ctx);
+      }
+    }
 		
 		var i;
 		var j;
@@ -636,7 +644,16 @@ function ObjectManager()
 		this.BackEdges[objectIDto].push(l);
 		
 	}
-	
+
+  this.setArrow = function(id, xFrom, yFrom, xTo, yTo, color)
+  {
+    this.arrows[id] = new Arrow(xFrom, yFrom, xTo, yTo, color)
+  }
+
+  this.deleteArrow = function(id)
+  {
+    this.arrows[id] = null
+  }
 	
 	this.setNull = function(objectID, nullVal)
 	{

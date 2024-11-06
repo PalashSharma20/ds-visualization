@@ -129,6 +129,16 @@ var PRINT_HORIZONTAL_GAP = 50
 var EXPLANITORY_TEXT_X = 10
 var EXPLANITORY_TEXT_Y = 10
 
+var ARRAY_BACKGROUND = "#FFFFFF"
+var ARRAY_HIGHLIGHT = "#90EE90"
+
+var ARRAY_X = 100
+var ARRAY_Y = 450
+var CELL_WIDTH = 30
+var CELL_HEIGHT = 30
+var ARROW_LENGTH = 50
+const cells = []
+
 RedBlack.prototype.constructTreeFromUI = function () {
   const val = this.constructField.value.trim()
   if (!val) return
@@ -141,10 +151,21 @@ RedBlack.prototype.constructTreeFromUI = function () {
   this.implementAction(this.buildTree.bind(this), sorted)
 }
 
+RedBlack.prototype.drawArray = function(sorted) {
+  for (let i = 0; i < sorted.length; i++){
+    let index = this.nextIndex++
+    cells.push(index)
+    this.cmd("CreateRectangle", index, sorted[i],
+              CELL_WIDTH, CELL_HEIGHT, ARRAY_X + i * CELL_WIDTH, ARRAY_Y)
+  }
+}
+
 RedBlack.prototype.buildTree = function (sorted) {
   this.commands = []
   this.deleteTree(this.treeRoot)
   this.reset()
+
+  this.drawArray(sorted)
 
   const mid = Math.floor((sorted.length - 1) / 2)
 
@@ -178,8 +199,37 @@ RedBlack.prototype.buildTree = function (sorted) {
     Math.floor(Math.log2(sorted.length + 1))
   )
 
+  for (let id of cells){
+    this.cmd("Delete", id)
+  }
+  cells.length = 0
+  this.cmd("DeleteArrow", 0)
+  this.cmd("DeleteArrow", 1)
+
   this.cmd("SetText", 0, " ")
   return this.commands
+}
+
+RedBlack.prototype.setArrow = function(
+  id, // left = 0, right = 1
+  index // array index
+) {
+  let x = ARRAY_X + index * CELL_WIDTH
+  let bottom_y = ARRAY_Y - CELL_HEIGHT / 2
+  this.cmd("MoveArrow", id, x, bottom_y - ARROW_LENGTH, x, bottom_y)
+}
+
+RedBlack.prototype.setRange = function (
+  sorted,
+  start,
+  end
+) {
+  this.setArrow(0, start)
+  this.setArrow(1, end)
+  for (let i = 0; i < sorted.length; i++){
+    this.cmd("SetBackgroundColor", cells[i], start <= i && i <= end?
+    ARRAY_HIGHLIGHT : ARRAY_BACKGROUND)
+  }
 }
 
 RedBlack.prototype.buildTreeHelper = function (
@@ -190,6 +240,9 @@ RedBlack.prototype.buildTreeHelper = function (
   level,
   redLevel
 ) {
+
+  this.setRange(sorted, start, end)
+
   const mid = start + Math.floor((end - start) / 2)
 
   if (start <= mid - 1) {
@@ -208,6 +261,8 @@ RedBlack.prototype.buildTreeHelper = function (
     this.resizeTree()
   }
 
+  this.setRange(sorted, start, end)
+
   if (mid + 1 <= end) {
     const rightChild = this.createChildNode(
       sorted,
@@ -223,6 +278,8 @@ RedBlack.prototype.buildTreeHelper = function (
     this.attachRightNullLeaf(node)
     this.resizeTree()
   }
+
+  this.setRange(sorted, start, end)
 }
 
 RedBlack.prototype.createChildNode = function (

@@ -656,6 +656,14 @@ function AnimationManager(objectManager)
 				}
 				undoBlock.push(new UndoConnect(parseInt(nextCommand[1]), parseInt (nextCommand[2]), false));
 			}
+      else if (nextCommand[0].toUpperCase() == "MOVEARROW"){
+        this.animatedObjects.setArrow(parseInt(nextCommand[1]), // ID (0/1)
+                            parseInt(nextCommand[2]), // xFrom
+        										parseInt(nextCommand[3]), // yFrom
+                            parseInt(nextCommand[4]), // xTo
+        										parseInt(nextCommand[5]), // yTo
+                            "#000000"); // arrow color
+      }
 			else if (nextCommand[0].toUpperCase() == "CREATERECTANGLE")
 			{
 				if (nextCommand.length == 9)
@@ -795,6 +803,11 @@ function AnimationManager(objectManager)
 					undoBlock.push(obj.createUndoDelete());
 					this.animatedObjects.removeObject(objectID);
 				}
+			}
+      else if (nextCommand[0].toUpperCase() == "DELETEARROW")
+			{
+				var arrowID = parseInt(nextCommand[1]);
+        this.animatedObjects.deleteArrow(arrowID);
 			}
 			else if (nextCommand[0].toUpperCase() == "CREATEHIGHLIGHTCIRCLE")
 			{
