@@ -34,7 +34,7 @@ BST.PRINT_COLOR = BST.FOREGROUND_COLOR
 
 BST.WIDTH_DELTA = 50
 BST.HEIGHT_DELTA = 50
-BST.STARTING_Y = 50
+BST.STARTING_Y = 150
 
 BST.FIRST_PRINT_POS_X = 50
 BST.PRINT_VERTICAL_GAP = 20
@@ -107,22 +107,52 @@ BST.prototype.reset = function () {
   this.treeRoot = null
 }
 
+var ARRAY_BACKGROUND = "#FFFFFF"
+var ARRAY_HIGHLIGHT = "#90EE90"
+
+var ARRAY_Y = 80
+var CELL_WIDTH = 30
+var CELL_HEIGHT = 30
+var ARROW_LENGTH = 30
+const cells = []
+
 BST.prototype.constructTreeFromUI = function () {
   const val = this.constructField.value.trim()
   if (!val) return
 
-  const sorted = val
+  let sorted = val
     .split(",")
     .map((n) => this.normalizeNumber(n, 4))
     .filter((n) => !isNaN(n)) // Ensure valid numbers
 
+  sorted = [...new Set(sorted)] // Remove duplicates
+  sorted.sort() // Sort numbers
   this.implementAction(this.buildTree.bind(this), sorted)
+}
+
+BST.prototype.drawArray = function (sorted) {
+  this.arrayX = this.startingX - ((sorted.length - 1) / 2) * CELL_WIDTH
+  for (let i = 0; i < sorted.length; i++) {
+    let index = this.nextIndex++
+    cells.push(index)
+    this.cmd(
+      "CreateRectangle",
+      index,
+      sorted[i],
+      CELL_WIDTH,
+      CELL_HEIGHT,
+      this.arrayX + i * CELL_WIDTH,
+      ARRAY_Y
+    )
+  }
 }
 
 BST.prototype.buildTree = function (sorted) {
   this.commands = []
   this.deleteTree(this.treeRoot)
   this.reset()
+
+  this.drawArray(sorted)
 
   const mid = Math.floor((sorted.length - 1) / 2)
 
@@ -147,11 +177,41 @@ BST.prototype.buildTree = function (sorted) {
 
   this.buildTreeHelper(sorted, 0, sorted.length - 1, this.treeRoot, 0)
 
+  for (let id of cells) {
+    this.cmd("Delete", id)
+  }
+  cells.length = 0
+  this.cmd("DeleteArrow", 0)
+  this.cmd("DeleteArrow", 1)
+
   this.cmd("SetText", 0, " ")
   return this.commands
 }
 
+BST.prototype.setArrow = function (
+  id, // left = 0, right = 1
+  index // array index
+) {
+  let x = this.arrayX + index * CELL_WIDTH
+  let bottom_y = ARRAY_Y - CELL_HEIGHT / 2
+  this.cmd("MoveArrow", id, x, bottom_y - ARROW_LENGTH, x, bottom_y)
+}
+
+BST.prototype.setRange = function (sorted, start, end) {
+  this.setArrow(0, start)
+  this.setArrow(1, end)
+  for (let i = 0; i < sorted.length; i++) {
+    this.cmd(
+      "SetBackgroundColor",
+      cells[i],
+      start <= i && i <= end ? ARRAY_HIGHLIGHT : ARRAY_BACKGROUND
+    )
+  }
+}
+
 BST.prototype.buildTreeHelper = function (sorted, start, end, node, level) {
+  this.setRange(sorted, start, end)
+
   const mid = start + Math.floor((end - start) / 2)
 
   if (start <= mid - 1) {
@@ -166,6 +226,8 @@ BST.prototype.buildTreeHelper = function (sorted, start, end, node, level) {
     this.buildTreeHelper(sorted, start, mid - 1, leftChild, level + 1)
   }
 
+  this.setRange(sorted, start, end)
+
   if (mid + 1 <= end) {
     const rightChild = this.createChildNode(
       sorted,
@@ -177,6 +239,8 @@ BST.prototype.buildTreeHelper = function (sorted, start, end, node, level) {
     )
     this.buildTreeHelper(sorted, mid + 1, end, rightChild, level + 1)
   }
+
+  this.setRange(sorted, start, end)
 }
 
 BST.prototype.createChildNode = function (
