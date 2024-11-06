@@ -143,11 +143,13 @@ RedBlack.prototype.constructTreeFromUI = function () {
   const val = this.constructField.value.trim()
   if (!val) return
 
-  const sorted = val
+  let sorted = val
     .split(",")
     .map((n) => this.normalizeNumber(n, 4))
     .filter((n) => !isNaN(n)) // Ensure valid numbers
 
+  sorted = [...new Set(sorted)] // Remove duplicates
+  sorted.sort() // Sort numbers
   this.implementAction(this.buildTree.bind(this), sorted)
 }
 
