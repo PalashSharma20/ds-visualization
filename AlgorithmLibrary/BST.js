@@ -808,6 +808,8 @@ BST.prototype.disableUI = function (event) {
   this.findField.disabled = true
   this.findButton.disabled = true
   this.printButton.disabled = true
+  this.constructField.disabled = true
+  this.constructButton.disabled = true
 }
 
 BST.prototype.enableUI = function (event) {
@@ -818,6 +820,8 @@ BST.prototype.enableUI = function (event) {
   this.findField.disabled = false
   this.findButton.disabled = false
   this.printButton.disabled = false
+  this.constructField.disabled = false
+  this.constructButton.disabled = false
 }
 
 var currentAlg

@@ -77,16 +77,16 @@ RedBlack.prototype.addControls = function () {
   this.printButton = addControlToAlgorithmBar("Button", "Print")
   this.printButton.onclick = this.printCallback.bind(this)
 
-  this.showNullLeaves = addCheckboxToAlgorithmBar("Show Null Leaves")
-  this.showNullLeaves.onclick = this.showNullLeavesCallback.bind(this)
-  this.showNullLeaves.checked = false
-
   this.constructField = addControlToAlgorithmBar("Text", "1,2,3,4,5,6,7,8,9,10")
   this.constructButton = addControlToAlgorithmBar(
     "Button",
     "Construct from Sorted Input"
   )
   this.constructButton.onclick = this.constructTreeFromUI.bind(this)
+
+  this.showNullLeaves = addCheckboxToAlgorithmBar("Show Null Leaves")
+  this.showNullLeaves.onclick = this.showNullLeavesCallback.bind(this)
+  this.showNullLeaves.checked = false
 }
 
 RedBlack.prototype.reset = function () {
@@ -152,13 +152,20 @@ RedBlack.prototype.constructTreeFromUI = function () {
   this.implementAction(this.buildTree.bind(this), sorted)
 }
 
-RedBlack.prototype.drawArray = function(sorted) {
-  this.arrayX = this.startingX - (sorted.length - 1) / 2 * CELL_WIDTH
-  for (let i = 0; i < sorted.length; i++){
+RedBlack.prototype.drawArray = function (sorted) {
+  this.arrayX = this.startingX - ((sorted.length - 1) / 2) * CELL_WIDTH
+  for (let i = 0; i < sorted.length; i++) {
     let index = this.nextIndex++
     cells.push(index)
-    this.cmd("CreateRectangle", index, sorted[i],
-              CELL_WIDTH, CELL_HEIGHT, this.arrayX + i * CELL_WIDTH, ARRAY_Y)
+    this.cmd(
+      "CreateRectangle",
+      index,
+      sorted[i],
+      CELL_WIDTH,
+      CELL_HEIGHT,
+      this.arrayX + i * CELL_WIDTH,
+      ARRAY_Y
+    )
   }
 }
 
@@ -201,7 +208,7 @@ RedBlack.prototype.buildTree = function (sorted) {
     Math.floor(Math.log2(sorted.length + 1))
   )
 
-  for (let id of cells){
+  for (let id of cells) {
     this.cmd("Delete", id)
   }
   cells.length = 0
@@ -212,7 +219,7 @@ RedBlack.prototype.buildTree = function (sorted) {
   return this.commands
 }
 
-RedBlack.prototype.setArrow = function(
+RedBlack.prototype.setArrow = function (
   id, // left = 0, right = 1
   index // array index
 ) {
@@ -221,16 +228,15 @@ RedBlack.prototype.setArrow = function(
   this.cmd("MoveArrow", id, x, bottom_y - ARROW_LENGTH, x, bottom_y)
 }
 
-RedBlack.prototype.setRange = function (
-  sorted,
-  start,
-  end
-) {
+RedBlack.prototype.setRange = function (sorted, start, end) {
   this.setArrow(0, start)
   this.setArrow(1, end)
-  for (let i = 0; i < sorted.length; i++){
-    this.cmd("SetBackgroundColor", cells[i], start <= i && i <= end?
-    ARRAY_HIGHLIGHT : ARRAY_BACKGROUND)
+  for (let i = 0; i < sorted.length; i++) {
+    this.cmd(
+      "SetBackgroundColor",
+      cells[i],
+      start <= i && i <= end ? ARRAY_HIGHLIGHT : ARRAY_BACKGROUND
+    )
   }
 }
 
@@ -242,7 +248,6 @@ RedBlack.prototype.buildTreeHelper = function (
   level,
   redLevel
 ) {
-
   this.setRange(sorted, start, end)
 
   const mid = start + Math.floor((end - start) / 2)
@@ -1652,6 +1657,8 @@ RedBlack.prototype.disableUI = function (event) {
   this.findField.disabled = true
   this.findButton.disabled = true
   this.printButton.disabled = true
+  this.constructField.disabled = true
+  this.constructButton.disabled = true
 }
 
 RedBlack.prototype.enableUI = function (event) {
@@ -1662,6 +1669,8 @@ RedBlack.prototype.enableUI = function (event) {
   this.findField.disabled = false
   this.findButton.disabled = false
   this.printButton.disabled = false
+  this.constructField.disabled = false
+  this.constructButton.disabled = false
 }
 
 /////////////////////////////////////////////////////////
