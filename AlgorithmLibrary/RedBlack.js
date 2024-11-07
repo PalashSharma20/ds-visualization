@@ -134,6 +134,9 @@ var EXPLANITORY_TEXT_Y = 10
 var ARRAY_BACKGROUND = "#FFFFFF"
 var ARRAY_HIGHLIGHT = "#90EE90"
 
+var ARROW_MID_COLOR = "#DD0000"
+var ARROW_BORDER_COLOR = "#000000"
+
 var ARRAY_Y = 80
 var CELL_WIDTH = 30
 var CELL_HEIGHT = 30
@@ -237,7 +240,7 @@ RedBlack.prototype.setArrow = function (
 ) {
   let x = this.arrayX + index * CELL_WIDTH
   let bottom_y = ARRAY_Y - CELL_HEIGHT / 2
-  this.cmd("MoveArrow", id, x, bottom_y - ARROW_LENGTH, x, bottom_y, id == 2? FOREGROUND_RED : FOREGROUND_BLACK)
+  this.cmd("MoveArrow", id, x, bottom_y - ARROW_LENGTH, x, bottom_y, id == 2? ARROW_MID_COLOR : ARROW_BORDER_COLOR)
 }
 
 RedBlack.prototype.setRange = function (sorted, start, end, mid = -1) {

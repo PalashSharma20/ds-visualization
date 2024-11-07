@@ -34,7 +34,8 @@ BST.PRINT_COLOR = BST.FOREGROUND_COLOR
 
 BST.WIDTH_DELTA = 50
 BST.HEIGHT_DELTA = 50
-BST.STARTING_Y = 150
+BST.STARTING_Y = 50
+BST.BUILD_DELTA_Y = 100
 
 BST.FIRST_PRINT_POS_X = 50
 BST.PRINT_VERTICAL_GAP = 20
@@ -59,6 +60,7 @@ BST.prototype.init = function (am, w, h) {
   this.addControls()
   this.nextIndex = 0
   this.commands = []
+  this.buildingTree = false
   this.cmd("CreateLabel", 0, "", 20, 10, 0)
   this.nextIndex = 1
   this.animationManager.StartNewAnimation(this.commands)
@@ -152,6 +154,7 @@ BST.prototype.buildTree = function (sorted) {
   this.deleteTree(this.treeRoot)
   this.reset()
 
+  this.buildingTree = true
   this.drawArray(sorted)
 
   const mid = Math.floor((sorted.length - 1) / 2)
@@ -161,14 +164,14 @@ BST.prototype.buildTree = function (sorted) {
     sorted[mid],
     treeNodeID,
     this.startingX,
-    BST.STARTING_Y
+    BST.STARTING_Y + BST.BUILD_DELTA_Y
   )
 
   this.createNode(
     treeNodeID,
     this.treeRoot.data,
     this.startingX,
-    BST.STARTING_Y
+    BST.STARTING_Y + BST.BUILD_DELTA_Y
   )
   this.cmd("SetHighlight", treeNodeID, 1)
   this.cmd("SetText", 0, "Level: 0, Node: Root")
@@ -181,25 +184,38 @@ BST.prototype.buildTree = function (sorted) {
     this.cmd("Delete", id)
   }
   cells.length = 0
-  this.cmd("DeleteArrow", 0)
-  this.cmd("DeleteArrow", 1)
+  this.deleteArrows()
 
   this.cmd("SetText", 0, " ")
+
+  this.buildingTree = false
+  this.resizeTree();
+
   return this.commands
 }
 
 BST.prototype.setArrow = function (
-  id, // left = 0, right = 1
+  id, // left = 0, right = 1, mid = 2
   index // array index
 ) {
   let x = this.arrayX + index * CELL_WIDTH
   let bottom_y = ARRAY_Y - CELL_HEIGHT / 2
-  this.cmd("MoveArrow", id, x, bottom_y - ARROW_LENGTH, x, bottom_y)
+  this.cmd("MoveArrow", id, x, bottom_y - ARROW_LENGTH, x, bottom_y, id == 2? "#DD0000" : "#000000")
 }
 
-BST.prototype.setRange = function (sorted, start, end) {
+BST.prototype.deleteArrows = function () {
+  this.cmd("DeleteArrow", 0)
+  this.cmd("DeleteArrow", 1)
+  this.cmd("DeleteArrow", 2)
+}
+
+BST.prototype.setRange = function (sorted, start, end, mid = -1) {
+  this.deleteArrows()
   this.setArrow(0, start)
   this.setArrow(1, end)
+  if (mid != -1){
+    this.setArrow(2, mid);
+  }
   for (let i = 0; i < sorted.length; i++) {
     this.cmd(
       "SetBackgroundColor",
@@ -209,10 +225,33 @@ BST.prototype.setRange = function (sorted, start, end) {
   }
 }
 
-BST.prototype.buildTreeHelper = function (sorted, start, end, node, level) {
-  this.setRange(sorted, start, end)
+// Updates the array range above the node and highlight
+BST.prototype.visualizeNode = function(
+  sorted,
+  start,
+  end,
+  mid, // -1 if not to be included
+  node
+) {
+  this.highlightID = this.nextIndex++
+  this.cmd(
+    "CreateHighlightCircle",
+    this.highlightID,
+    this.HIGHLIGHT_CIRCLE_COLOR,
+    node.x,
+    node.y
+  )
+  this.setRange(sorted, start, end, mid)
+  this.cmd("step")
+  this.cmd("delete", this.highlightID)
+}
 
+BST.prototype.buildTreeHelper = function (sorted, start, end, node, level) {
   const mid = start + Math.floor((end - start) / 2)
+  
+  this.visualizeNode(sorted, start, end, mid, node)
+
+  let justHighlighted = true
 
   if (start <= mid - 1) {
     const leftChild = this.createChildNode(
@@ -224,9 +263,14 @@ BST.prototype.buildTreeHelper = function (sorted, start, end, node, level) {
       true
     )
     this.buildTreeHelper(sorted, start, mid - 1, leftChild, level + 1)
+    justHighlighted = false
   }
 
-  this.setRange(sorted, start, end)
+  if (!justHighlighted){
+    this.visualizeNode(sorted, start, end, mid, node)
+  }
+
+  justHighlighted = true
 
   if (mid + 1 <= end) {
     const rightChild = this.createChildNode(
@@ -238,9 +282,12 @@ BST.prototype.buildTreeHelper = function (sorted, start, end, node, level) {
       false
     )
     this.buildTreeHelper(sorted, mid + 1, end, rightChild, level + 1)
+    justHighlighted = false
   }
 
-  this.setRange(sorted, start, end)
+  if (!justHighlighted){
+    this.visualizeNode(sorted, start, end, -1, node)
+  }
 }
 
 BST.prototype.createChildNode = function (
@@ -837,7 +884,7 @@ BST.prototype.resizeTree = function () {
         2 * startingPoint - this.treeRoot.rightWidth
       )
     }
-    this.setNewPositions(this.treeRoot, startingPoint, BST.STARTING_Y, 0)
+    this.setNewPositions(this.treeRoot, startingPoint, BST.STARTING_Y + (this.buildingTree? BST.BUILD_DELTA_Y : 0), 0)
     this.animateNewPositions(this.treeRoot)
     this.cmd("Step")
   }
