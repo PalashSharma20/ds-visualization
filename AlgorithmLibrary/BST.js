@@ -510,7 +510,10 @@ BST.prototype.insertElement = function (insertedValue) {
 
     this.nextIndex += 1
     this.cmd("SetHighlight", insertElem.graphicID, 1)
-    this.insert(insertElem, this.treeRoot)
+    const isInserted = this.insert(insertElem, this.treeRoot)
+    if (!isInserted) {
+      this.cmd("Delete", insertElem.graphicID)
+    }
     this.resizeTree()
   }
   this.cmd("SetText", 0, "")
@@ -520,6 +523,18 @@ BST.prototype.insertElement = function (insertedValue) {
 BST.prototype.insert = function (elem, tree) {
   this.cmd("SetHighlight", tree.graphicID, 1)
   this.cmd("SetHighlight", elem.graphicID, 1)
+
+  if (elem.data === tree.data) {
+    this.cmd(
+      "SetText",
+      0,
+      elem.data + " is already in the tree. Duplicate not allowed."
+    )
+    this.cmd("Step")
+    this.cmd("SetHighlight", tree.graphicID, 0)
+    this.cmd("SetHighlight", elem.graphicID, 0)
+    return false
+  }
 
   if (elem.data < tree.data) {
     this.cmd(
@@ -546,6 +561,8 @@ BST.prototype.insert = function (elem, tree) {
       tree.left = elem
       elem.parent = tree
       this.cmd("Connect", tree.graphicID, elem.graphicID, BST.LINK_COLOR)
+
+      return true
     } else {
       this.cmd(
         "CreateHighlightCircle",
@@ -557,7 +574,7 @@ BST.prototype.insert = function (elem, tree) {
       this.cmd("Move", this.highlightID, tree.left.x, tree.left.y)
       this.cmd("Step")
       this.cmd("Delete", this.highlightID)
-      this.insert(elem, tree.left)
+      return this.insert(elem, tree.left)
     }
   } else {
     if (tree.right == null) {
@@ -569,6 +586,8 @@ BST.prototype.insert = function (elem, tree) {
       elem.x = tree.x + BST.WIDTH_DELTA / 2
       elem.y = tree.y + BST.HEIGHT_DELTA
       this.cmd("Move", elem.graphicID, elem.x, elem.y)
+
+      return true
     } else {
       this.cmd(
         "CreateHighlightCircle",
@@ -580,7 +599,7 @@ BST.prototype.insert = function (elem, tree) {
       this.cmd("Move", this.highlightID, tree.right.x, tree.right.y)
       this.cmd("Step")
       this.cmd("Delete", this.highlightID)
-      this.insert(elem, tree.right)
+      return this.insert(elem, tree.right)
     }
   }
 }

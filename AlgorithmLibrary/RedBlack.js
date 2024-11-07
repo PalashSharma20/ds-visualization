@@ -646,7 +646,10 @@ RedBlack.prototype.insertElement = function (insertedValue) {
 
     this.cmd("SetHighlight", insertElem.graphicID, 1)
     insertElem.height = 1
-    this.insert(insertElem, this.treeRoot)
+    const isInserted = this.insert(insertElem, this.treeRoot)
+    if (!isInserted) {
+      this.cmd("Delete", insertElem.graphicID)
+    }
     //				resizeTree();
   }
   this.cmd("SetText", 0, " ")
@@ -758,6 +761,18 @@ RedBlack.prototype.insert = function (elem, tree) {
   this.cmd("SetHighlight", tree.graphicID, 1)
   this.cmd("SetHighlight", elem.graphicID, 1)
 
+  if (elem.data === tree.data) {
+    this.cmd(
+      "SetText",
+      0,
+      elem.data + " is already in the tree. Duplicate not allowed."
+    )
+    this.cmd("Step")
+    this.cmd("SetHighlight", tree.graphicID, 0)
+    this.cmd("SetHighlight", elem.graphicID, 0)
+    return false
+  }
+
   if (elem.data < tree.data) {
     this.cmd(
       "SetText",
@@ -796,6 +811,8 @@ RedBlack.prototype.insert = function (elem, tree) {
       this.resizeTree()
 
       this.fixDoubleRed(elem)
+
+      return true
     } else {
       this.cmd(
         "CreateHighlightCircle",
@@ -807,7 +824,7 @@ RedBlack.prototype.insert = function (elem, tree) {
       this.cmd("Move", this.highlightID, tree.left.x, tree.left.y)
       this.cmd("Step")
       this.cmd("Delete", this.highlightID)
-      this.insert(elem, tree.left)
+      return this.insert(elem, tree.left)
     }
   } else {
     if (tree.right == null || tree.right.phantomLeaf) {
@@ -833,6 +850,8 @@ RedBlack.prototype.insert = function (elem, tree) {
 
       this.resizeTree()
       this.fixDoubleRed(elem)
+
+      return true
     } else {
       this.cmd(
         "CreateHighlightCircle",
@@ -844,7 +863,7 @@ RedBlack.prototype.insert = function (elem, tree) {
       this.cmd("Move", this.highlightID, tree.right.x, tree.right.y)
       this.cmd("Step")
       this.cmd("Delete", this.highlightID)
-      this.insert(elem, tree.right)
+      return this.insert(elem, tree.right)
     }
   }
 }
