@@ -42,6 +42,7 @@ RedBlack.prototype.init = function (am, w, h) {
   this.startingX = w / 2
   this.print_max = w - PRINT_HORIZONTAL_GAP
   this.first_print_pos_y = h - 2 * PRINT_VERTICAL_GAP
+  this.buildingTree = false
 
   this.cmd("CreateLabel", 0, "", EXPLANITORY_TEXT_X, EXPLANITORY_TEXT_Y, 0)
   this.animationManager.StartNewAnimation(this.commands)
@@ -121,7 +122,8 @@ var PRINT_COLOR = FOREGROUND_COLOR
 
 var widthDelta = 50
 var heightDelta = 50
-var startingY = 150
+var startingY = 50
+var buildDeltaY = 100
 
 var FIRST_PRINT_POS_X = 40
 var PRINT_VERTICAL_GAP = 20
@@ -174,6 +176,7 @@ RedBlack.prototype.buildTree = function (sorted) {
   this.deleteTree(this.treeRoot)
   this.reset()
 
+  this.buildingTree = true
   this.drawArray(sorted)
 
   const mid = Math.floor((sorted.length - 1) / 2)
@@ -183,7 +186,7 @@ RedBlack.prototype.buildTree = function (sorted) {
     sorted[mid],
     treeNodeID,
     this.startingX,
-    startingY
+    startingY + buildDeltaY
   )
   this.treeRoot.blackLevel = 1
 
@@ -191,8 +194,8 @@ RedBlack.prototype.buildTree = function (sorted) {
     treeNodeID,
     this.treeRoot.data,
     this.treeRoot.blackLevel,
-    this.startingX,
-    startingY
+    this.treeRoot.x,
+    this.treeRoot.y
   )
   this.cmd("SetHighlight", treeNodeID, 1)
   this.cmd("SetText", 0, "Level: 0, Color: Black, Node: Root")
@@ -216,6 +219,10 @@ RedBlack.prototype.buildTree = function (sorted) {
   this.cmd("DeleteArrow", 1)
 
   this.cmd("SetText", 0, " ")
+
+  this.buildingTree = false
+  this.resizeTree();
+
   return this.commands
 }
 
@@ -248,9 +255,22 @@ RedBlack.prototype.buildTreeHelper = function (
   level,
   redLevel
 ) {
+
+  this.highlightID = this.nextIndex++
+  this.cmd(
+    "CreateHighlightCircle",
+    this.highlightID,
+    HIGHLIGHT_COLOR,
+    node.x,
+    node.y
+  )
   this.setRange(sorted, start, end)
+  this.cmd("step")
+  this.cmd("delete", this.highlightID)
 
   const mid = start + Math.floor((end - start) / 2)
+
+  let justHighlighted = true
 
   if (start <= mid - 1) {
     const leftChild = this.createChildNode(
@@ -263,12 +283,27 @@ RedBlack.prototype.buildTreeHelper = function (
       true
     )
     this.buildTreeHelper(sorted, start, mid - 1, leftChild, level + 1, redLevel)
+    justHighlighted = false
   } else {
     this.attachLeftNullLeaf(node)
     this.resizeTree()
   }
 
-  this.setRange(sorted, start, end)
+  if (!justHighlighted){
+    this.highlightID = this.nextIndex++
+    this.cmd(
+      "CreateHighlightCircle",
+      this.highlightID,
+      HIGHLIGHT_COLOR,
+      node.x,
+      node.y
+    )
+    this.setRange(sorted, start, end)
+    this.cmd("step")
+    this.cmd("delete", this.highlightID)
+  }
+
+  justHighlighted = true
 
   if (mid + 1 <= end) {
     const rightChild = this.createChildNode(
@@ -281,12 +316,25 @@ RedBlack.prototype.buildTreeHelper = function (
       false
     )
     this.buildTreeHelper(sorted, mid + 1, end, rightChild, level + 1, redLevel)
+    justHighlighted = false
   } else {
     this.attachRightNullLeaf(node)
     this.resizeTree()
   }
 
-  this.setRange(sorted, start, end)
+  if (!justHighlighted){
+    this.highlightID = this.nextIndex++
+    this.cmd(
+      "CreateHighlightCircle",
+      this.highlightID,
+      HIGHLIGHT_COLOR,
+      node.x,
+      node.y
+    )
+    this.setRange(sorted, start, end)
+    this.cmd("step")
+    this.cmd("delete", this.highlightID)
+  }
 }
 
 RedBlack.prototype.createChildNode = function (
@@ -316,7 +364,7 @@ RedBlack.prototype.createChildNode = function (
     childNode.data,
     childNode.blackLevel,
     30,
-    startingY
+    startingY + buildDeltaY
   )
   this.cmd("SetHighlight", childNode.graphicID, 1)
   this.cmd(
@@ -1622,7 +1670,7 @@ RedBlack.prototype.resizeTree = function () {
         2 * startingPoint - this.treeRoot.rightWidth
       )
     }
-    this.setNewPositions(this.treeRoot, startingPoint, startingY, 0)
+    this.setNewPositions(this.treeRoot, startingPoint, startingY + (this.buildingTree? buildDeltaY : 0), 0)
     this.animateNewPositions(this.treeRoot)
     this.cmd("Step")
   }
