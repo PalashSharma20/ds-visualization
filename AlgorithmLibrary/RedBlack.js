@@ -171,6 +171,12 @@ RedBlack.prototype.drawArray = function (sorted) {
   }
 }
 
+RedBlack.prototype.deleteArrows = function () {
+  this.cmd("DeleteArrow", 0)
+  this.cmd("DeleteArrow", 1)
+  this.cmd("DeleteArrow", 2)
+}
+
 RedBlack.prototype.buildTree = function (sorted) {
   this.commands = []
   this.deleteTree(this.treeRoot)
@@ -215,8 +221,7 @@ RedBlack.prototype.buildTree = function (sorted) {
     this.cmd("Delete", id)
   }
   cells.length = 0
-  this.cmd("DeleteArrow", 0)
-  this.cmd("DeleteArrow", 1)
+  this.deleteArrows()
 
   this.cmd("SetText", 0, " ")
 
@@ -227,17 +232,21 @@ RedBlack.prototype.buildTree = function (sorted) {
 }
 
 RedBlack.prototype.setArrow = function (
-  id, // left = 0, right = 1
+  id, // left = 0, right = 1, mid = 2
   index // array index
 ) {
   let x = this.arrayX + index * CELL_WIDTH
   let bottom_y = ARRAY_Y - CELL_HEIGHT / 2
-  this.cmd("MoveArrow", id, x, bottom_y - ARROW_LENGTH, x, bottom_y)
+  this.cmd("MoveArrow", id, x, bottom_y - ARROW_LENGTH, x, bottom_y, id == 2? FOREGROUND_RED : FOREGROUND_BLACK)
 }
 
-RedBlack.prototype.setRange = function (sorted, start, end) {
+RedBlack.prototype.setRange = function (sorted, start, end, mid = -1) {
+  this.deleteArrows()
   this.setArrow(0, start)
   this.setArrow(1, end)
+  if (mid != -1){
+    this.setArrow(2, mid);
+  }
   for (let i = 0; i < sorted.length; i++) {
     this.cmd(
       "SetBackgroundColor",
@@ -245,6 +254,27 @@ RedBlack.prototype.setRange = function (sorted, start, end) {
       start <= i && i <= end ? ARRAY_HIGHLIGHT : ARRAY_BACKGROUND
     )
   }
+}
+
+// Updates the array range above the node and highlight
+RedBlack.prototype.visualizeNode = function(
+  sorted,
+  start,
+  end,
+  mid, // -1 if not to be included
+  node
+) {
+  this.highlightID = this.nextIndex++
+  this.cmd(
+    "CreateHighlightCircle",
+    this.highlightID,
+    HIGHLIGHT_COLOR,
+    node.x,
+    node.y
+  )
+  this.setRange(sorted, start, end, mid)
+  this.cmd("step")
+  this.cmd("delete", this.highlightID)
 }
 
 RedBlack.prototype.buildTreeHelper = function (
@@ -256,19 +286,9 @@ RedBlack.prototype.buildTreeHelper = function (
   redLevel
 ) {
 
-  this.highlightID = this.nextIndex++
-  this.cmd(
-    "CreateHighlightCircle",
-    this.highlightID,
-    HIGHLIGHT_COLOR,
-    node.x,
-    node.y
-  )
-  this.setRange(sorted, start, end)
-  this.cmd("step")
-  this.cmd("delete", this.highlightID)
-
   const mid = start + Math.floor((end - start) / 2)
+
+  this.visualizeNode(sorted, start, end, mid, node)
 
   let justHighlighted = true
 
@@ -290,17 +310,7 @@ RedBlack.prototype.buildTreeHelper = function (
   }
 
   if (!justHighlighted){
-    this.highlightID = this.nextIndex++
-    this.cmd(
-      "CreateHighlightCircle",
-      this.highlightID,
-      HIGHLIGHT_COLOR,
-      node.x,
-      node.y
-    )
-    this.setRange(sorted, start, end)
-    this.cmd("step")
-    this.cmd("delete", this.highlightID)
+    this.visualizeNode(sorted, start, end, mid, node)
   }
 
   justHighlighted = true
@@ -323,17 +333,7 @@ RedBlack.prototype.buildTreeHelper = function (
   }
 
   if (!justHighlighted){
-    this.highlightID = this.nextIndex++
-    this.cmd(
-      "CreateHighlightCircle",
-      this.highlightID,
-      HIGHLIGHT_COLOR,
-      node.x,
-      node.y
-    )
-    this.setRange(sorted, start, end)
-    this.cmd("step")
-    this.cmd("delete", this.highlightID)
+    this.visualizeNode(sorted, start, end, -1, node)
   }
 }
 

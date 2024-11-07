@@ -56,7 +56,7 @@ function ObjectManager()
 	this.statusReport = new AnimatedLabel(-1, "XXX", false, 30);
 	this.statusReport.x = 30;
 
-  this.arrows = [null, null];
+  this.arrows = [null, null, null];
 	
 	this.draw = function()
 	{

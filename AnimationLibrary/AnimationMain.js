@@ -657,12 +657,12 @@ function AnimationManager(objectManager)
 				undoBlock.push(new UndoConnect(parseInt(nextCommand[1]), parseInt (nextCommand[2]), false));
 			}
       else if (nextCommand[0].toUpperCase() == "MOVEARROW"){
-        this.animatedObjects.setArrow(parseInt(nextCommand[1]), // ID (0/1)
+        this.animatedObjects.setArrow(parseInt(nextCommand[1]), // ID (0/1/2)
                             parseInt(nextCommand[2]), // xFrom
         										parseInt(nextCommand[3]), // yFrom
                             parseInt(nextCommand[4]), // xTo
         										parseInt(nextCommand[5]), // yTo
-                            "#000000"); // arrow color
+                            nextCommand[6]); // arrow color
       }
 			else if (nextCommand[0].toUpperCase() == "CREATERECTANGLE")
 			{
